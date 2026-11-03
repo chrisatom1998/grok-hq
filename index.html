@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <title>Grok HQ</title>
+<link rel="icon" href="data:,">
 <style>
 :root{--bg:#f4f1ea;--fg:#1d1d1f;--mut:#6b6b70;--card:#fff;--line:#e3ded3;--floor:#ebe6db;--acc:#1E86FC;--warn:#F59312}
 @media (prefers-color-scheme:dark){:root{--bg:#121316;--fg:#ececf0;--mut:#9a9aa3;--card:#1c1e23;--line:#2b2e35;--floor:#181a1f}}
@@ -41,6 +42,13 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
 #setup input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;margin:8px 0}
 #setup button{padding:9px 16px;border:0;border-radius:8px;background:var(--acc);color:#fff;font:inherit;cursor:pointer}
 .empty{color:var(--mut);text-align:center;padding:40px}
+.tog{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer}
+.tog[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+#view3d{position:relative;height:calc(100vh - 90px);min-height:420px}
+#view3d canvas{display:block;width:100%;height:100%;outline:none}
+#v3msg{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--mut);pointer-events:none}
+#v3pop{position:absolute;right:12px;top:12px;width:280px;max-width:calc(100% - 24px)}
+#v3pop .x{float:right;border:0;background:none;color:var(--mut);font-size:18px;cursor:pointer;line-height:1}
 </style>
 </head>
 <body>
@@ -52,6 +60,7 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
 <div id="app" hidden>
   <header>
     <h1><span id="dot" class="dot"></span> Grok HQ</h1>
+    <button id="tog3d" class="tog" type="button" aria-pressed="false">3D view</button>
     <span id="needs" class="needs zero">0 need you</span>
     <div class="usage">
       <div class="small" id="ulabel">Weekly usage: no data yet</div>
@@ -60,18 +69,20 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
     </div>
   </header>
   <main id="floors"></main>
+  <div id="view3d" hidden><div id="v3msg">Drag to rotate · scroll to zoom · click a bot</div><div id="v3pop" hidden></div></div>
 </div>
 <script>
 "use strict";
 (function(){
-  var S, es=null, timer=null, retry=null;
-  function reset(){S={status:{},roster:[],groups:{},chat:{},looks:{},routines:{},usage:null,check:null};}
+  var S, es=null, timer=null, retry=null, seen=null, lastId="";
+  function reset(){seen={};lastId="";S={status:{},roster:[],groups:{},chat:{},looks:{},routines:{},usage:null,check:null};}
   function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=String(text);return e;}
   function isObj(o){return o&&typeof o==="object"&&!Array.isArray(o);}
   function str(v,max){return typeof v==="string"?v.slice(0,max||200):"";}
   function topic(){var h=decodeURIComponent(location.hash.slice(1)).trim();return /^[A-Za-z0-9_-]{1,64}$/.test(h)?h:"";}
   function merge(dst,src){for(var k in src){if(Object.prototype.hasOwnProperty.call(src,k)&&k!=="__proto__"&&k!=="constructor"&&k!=="prototype")dst[k]=src[k];}}
   function apply(m){
+    if(m.id){if(seen[m.id])return;seen[m.id]=1;lastId=m.id;}
     var d; try{d=JSON.parse(m.message);}catch(e){return;}
     if(!isObj(d))return;
     var t=(m.time||Date.now()/1000)*1000;
@@ -100,10 +111,7 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
   var SHAPES=["sphere","cloud","rounded_square","star4","star6","clover","bubble","flower","drop","pill","triangle","pentagon","hexagon","cone","trio"];
   var COLORS=["#A06B39","#E5484D","#FD690F","#F59312","#14C16F","#13B7A2","#1E86FC","#8F59F9","#F93498"];
   function avatar(name){
-    var L=isObj(S.looks[name])?S.looks[name]:{},h=hash(name);
-    var shape=SHAPES.indexOf(L.shape)>=0?L.shape:SHAPES[h%SHAPES.length];
-    var color=/^#?[0-9a-fA-F]{6}$/.test(L.color||"")?(L.color[0]==="#"?L.color:"#"+L.color):COLORS[h%COLORS.length];
-    var acc=["none","glasses","antenna","stem","bow"].indexOf(L.accessory)>=0?L.accessory:"none";
+    var L=look(name),shape=L.shape,color=L.color,acc=L.accessory;
     var s=sv("svg",{width:48,height:48,viewBox:"0 0 48 48","aria-hidden":"true"}),f={fill:color},c=24,cy=27;
     switch(shape){
       case"sphere":sv("circle",{cx:c,cy:cy,r:15,fill:color},s);break;
@@ -131,35 +139,48 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
     return s;
   }
   var LABEL={working:"working",done:"done",idle:"idle",waiting_user:"needs you",error:"error"};
-  function render(){
+  function model(){
     var names=S.roster.slice();
     [S.status,S.groups,S.chat,S.looks,S.routines].forEach(function(o){Object.keys(o).forEach(function(n){if(names.indexOf(n)<0)names.push(n);});});
-    var floors={},need=0;
+    var floors={};
     names.forEach(function(n){var g=str(S.groups[n],40)||"Unassigned";(floors[g]=floors[g]||[]).push(n);});
     var order=Object.keys(floors).sort(function(a,b){if(a==="Ops")return 1;if(b==="Ops")return -1;if(a==="Unassigned")return 1;if(b==="Unassigned")return -1;return a.localeCompare(b);});
+    return {names:names,floors:floors,order:order};
+  }
+  function statusKey(n){var st=S.status[n];return st&&LABEL[st.status]?st.status:"unknown";}
+  function look(n){
+    var L=isObj(S.looks[n])?S.looks[n]:{},h=hash(n);
+    return {shape:SHAPES.indexOf(L.shape)>=0?L.shape:SHAPES[h%SHAPES.length],
+      color:/^#?[0-9a-fA-F]{6}$/.test(L.color||"")?(L.color[0]==="#"?L.color:"#"+L.color):COLORS[h%COLORS.length],
+      accessory:["none","glasses","antenna","stem","bow"].indexOf(L.accessory)>=0?L.accessory:"none"};
+  }
+  function card(n){
+    var st=S.status[n],k=statusKey(n);
+    var c=el("div","card"+(k==="waiting_user"?" need":""));
+    var top=el("div","top");top.appendChild(avatar(n));
+    var box=el("div");var nm=el("div","name",n);
+    if(k==="waiting_user")nm.appendChild(el("span","badge","NEEDS YOU"));
+    if(S.check&&st&&st.t>=S.check.t&&S.check.bots.indexOf(n)>=0)nm.appendChild(el("span","rep","reported"));
+    box.appendChild(nm);
+    var line=el("div");line.appendChild(el("span","pill s-"+k,LABEL[k]||"no status"));
+    if(st)line.appendChild(el("span","small"," · "+ago(st.t)));
+    box.appendChild(line);top.appendChild(box);c.appendChild(top);
+    if(st&&st.step)c.appendChild(el("div","step",st.step));
+    var link=str(S.chat[n],300);
+    if(/^grokbot:\/\/app\/v1\/agent\?id=[A-Za-z0-9-]+$/.test(link)){var a=el("a",null,"open chat →");a.href=link;c.appendChild(a);}
+    var r=S.routines[n];
+    if(Array.isArray(r)&&r.length){var ul=el("ul","rt");r.forEach(function(it){if(!isObj(it))return;var t=str(it.name,60)+(it.schedule?" — "+str(it.schedule,60):"")+(it.next_run?" · next "+fmt(it.next_run):"");ul.appendChild(el("li",null,t));});c.appendChild(ul);}
+    return c;
+  }
+  var listeners=[];
+  function render(){
+    var M=model(),need=0;
     var root=document.getElementById("floors");root.replaceChildren();
-    if(!names.length)root.appendChild(el("div","empty","Waiting for your bots to check in…"));
-    order.forEach(function(g,i){
-      var fl=el("section","floor");fl.appendChild(el("h2",null,"Floor "+(order.length-i)+" · "+g));
+    if(!M.names.length)root.appendChild(el("div","empty","Waiting for your bots to check in…"));
+    M.order.forEach(function(g,i){
+      var fl=el("section","floor");fl.appendChild(el("h2",null,"Floor "+(M.order.length-i)+" · "+g));
       var grid=el("div","grid");fl.appendChild(grid);
-      floors[g].forEach(function(n){
-        var st=S.status[n],k=st&&LABEL[st.status]?st.status:"unknown";
-        var card=el("div","card"+(k==="waiting_user"?" need":""));if(k==="waiting_user")need++;
-        var top=el("div","top");top.appendChild(avatar(n));
-        var box=el("div");var nm=el("div","name",n);
-        if(k==="waiting_user")nm.appendChild(el("span","badge","NEEDS YOU"));
-        if(S.check&&st&&st.t>=S.check.t&&S.check.bots.indexOf(n)>=0)nm.appendChild(el("span","rep","reported"));
-        box.appendChild(nm);
-        var line=el("div");line.appendChild(el("span","pill s-"+k,LABEL[k]||"no status"));
-        if(st)line.appendChild(el("span","small"," · "+ago(st.t)));
-        box.appendChild(line);top.appendChild(box);card.appendChild(top);
-        if(st&&st.step)card.appendChild(el("div","step",st.step));
-        var link=str(S.chat[n],300);
-        if(/^grokbot:\/\/app\/v1\/agent\?id=[A-Za-z0-9-]+$/.test(link)){var a=el("a",null,"open chat →");a.href=link;card.appendChild(a);}
-        var r=S.routines[n];
-        if(Array.isArray(r)&&r.length){var ul=el("ul","rt");r.forEach(function(it){if(!isObj(it))return;var t=str(it.name,60)+(it.schedule?" — "+str(it.schedule,60):"")+(it.next_run?" · next "+fmt(it.next_run):"");ul.appendChild(el("li",null,t));});card.appendChild(ul);}
-        grid.appendChild(card);
-      });
+      M.floors[g].forEach(function(n){if(statusKey(n)==="waiting_user")need++;grid.appendChild(card(n));});
       root.appendChild(fl);
     });
     var nb=document.getElementById("needs");nb.textContent=need+" need"+(need===1?"s":"")+" you";nb.className="needs"+(need?"":" zero");
@@ -167,7 +188,22 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
     if(u){var p=Math.max(0,Math.min(100,u.pct));document.getElementById("ubar").style.width=p+"%";
       document.getElementById("ulabel").textContent="Weekly usage: "+p+"%"+(u.rt?" · resets "+fmt(u.rt):"")+" · "+ago(u.t);
       Object.keys(u.bots).sort(function(a,b){return u.bots[b]-u.bots[a];}).forEach(function(b){if(typeof u.bots[b]==="number")sh.appendChild(el("span",null,b+" "+u.bots[b]+"%"));});}
+    listeners.forEach(function(f){try{f();}catch(e){console.warn("3D view update failed",e&&e.message);}});
   }
+  // read-only bridge for the optional 3D view (no topic exposed)
+  window.HQ={model:model,status:function(n){var st=S.status[n];return {key:statusKey(n),label:LABEL[statusKey(n)]||"no status",step:st?st.step:""};},
+    look:look,card:card,onRender:function(f){listeners.push(f);}};
+  var v3=null;
+  function show3d(on){
+    var b=document.getElementById("tog3d");b.setAttribute("aria-pressed",on?"true":"false");b.textContent=on?"2D cards":"3D view";
+    document.getElementById("floors").hidden=on;document.getElementById("view3d").hidden=!on;
+    if(on){
+      if(!v3)v3=import("./hq3d.js").then(function(m){return m.mount(document.getElementById("view3d"));}).catch(function(e){
+        document.getElementById("v3msg").textContent="3D view couldn't start on this device ("+String(e&&e.message||e).slice(0,80)+"). Use the 2D cards.";return null;});
+      v3.then(function(api){if(api)api.setActive(true);});
+    }else if(v3)v3.then(function(api){if(api)api.setActive(false);});
+  }
+  document.getElementById("tog3d").addEventListener("click",function(){show3d(this.getAttribute("aria-pressed")!=="true");});
   function setDot(c){var d=document.getElementById("dot");d.className="dot "+c;d.title=c==="live"?"live":"offline";}
   function start(){
     if(es){es.close();es=null;}clearTimeout(retry);
@@ -182,7 +218,8 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
   }
   function connect(base,T){
     if(topic()!==T)return;
-    es=new EventSource(base+"/sse");
+    // resume from the last message the poll saw, so nothing posted in between is missed (duplicates are skipped by id)
+    es=new EventSource(base+"/sse?since="+encodeURIComponent(lastId||"12h"));
     es.onopen=function(){setDot("live");};
     es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.event==="message"){apply(m);render();}}catch(x){}};
     es.onerror=function(){setDot("off");if(es&&es.readyState===2){es=null;retry=setTimeout(function(){connect(base,T);},5000);}};
