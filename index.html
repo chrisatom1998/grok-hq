@@ -44,11 +44,41 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
 .empty{color:var(--mut);text-align:center;padding:40px}
 .tog{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer}
 .tog[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
-#view3d{position:relative;height:calc(100vh - 90px);min-height:420px}
-#view3d canvas{display:block;width:100%;height:100%;outline:none}
-#v3msg{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--mut);pointer-events:none}
-#v3pop{position:absolute;right:12px;top:12px;width:280px;max-width:calc(100% - 24px)}
-#v3pop .x{float:right;border:0;background:none;color:var(--mut);font-size:18px;cursor:pointer;line-height:1}
+body.v3on #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+body.v3on header{position:static}
+#view3d{position:relative;flex:1;min-height:320px;overflow:hidden}
+#view3d canvas{display:block;position:absolute;inset:0;width:100%;height:100%;outline:none;touch-action:none}
+.tog.sm{padding:3px 10px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
+.tog.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+.chip .ct{opacity:.7}
+#v3bar{position:absolute;left:8px;right:8px;top:8px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none;z-index:3}
+#v3bar>*{pointer-events:auto;max-width:100%}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.v3row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#v3q{padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;font-size:13px;width:170px}
+#v3tip{position:absolute;z-index:4;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;max-width:240px;box-shadow:0 4px 16px #0004;display:flex;flex-direction:column;gap:3px}
+#v3msg{position:absolute;left:12px;bottom:54px;font-size:12px;color:var(--mut);pointer-events:none}
+#v3pop{position:absolute;right:12px;top:84px;width:300px;max-width:calc(100% - 24px);max-height:calc(100% - 150px);overflow:auto;z-index:3}
+.v3act{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+#v3time{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px;z-index:3}
+#view3d.replay #v3time{border-color:var(--warn);box-shadow:0 0 0 2px #F5931255}
+#v3slider{flex:1;min-width:0;accent-color:var(--acc)}
+#view3d.replay #v3slider{accent-color:var(--warn)}
+#v3tlabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
+@media (max-width:600px){
+  header{padding:8px 10px;gap:6px 10px}
+  .usage{flex-basis:100%;min-width:0}
+  body.v3on .shares{display:none}
+  #v3msg{display:none}
+  .tog.sm{padding:6px 12px;font-size:13px}
+  #v3q{flex:1;min-width:110px;padding:6px 12px}
+  .v3row{width:100%}
+  #v3pop{left:8px;right:8px;top:auto;bottom:60px;width:auto;max-width:none;max-height:45%}
+  #v3time{padding:6px 6px 6px 12px}
+  #v3slider{height:28px}
+  #v3tlabel{max-width:38%;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -69,13 +99,28 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
     </div>
   </header>
   <main id="floors"></main>
-  <div id="view3d" hidden><div id="v3msg">Drag to rotate · scroll to zoom · click a bot</div><div id="v3pop" hidden></div></div>
+  <div id="view3d" hidden>
+    <div id="v3bar">
+      <div id="v3chips" class="chips" role="toolbar" aria-label="Filter bots"></div>
+      <div class="v3row">
+        <input id="v3q" type="search" placeholder="Search bots" aria-label="Search bots" autocomplete="off" spellcheck="false">
+        <button id="v3rot" class="tog sm" type="button" aria-pressed="false">Auto-rotate</button>
+        <button id="v3reset" class="tog sm" type="button">Reset view</button>
+        <button id="v3ping" class="tog sm" type="button" aria-pressed="false" title="Soft sound when a bot needs you">Ping off</button>
+      </div>
+    </div>
+    <div id="v3tip" hidden></div>
+    <div id="v3msg">Drag to rotate · scroll or pinch to zoom · click a bot or a floor sign · keys 1–9 pick a floor, Esc resets</div>
+    <div id="v3pop" hidden></div>
+    <div id="v3time"><input id="v3slider" type="range" min="0" max="1" value="1" aria-label="Replay today's status changes" disabled><span id="v3tlabel" class="small">Live</span><button id="v3live" class="tog sm" type="button" aria-pressed="true">Live</button></div>
+  </div>
 </div>
 <script>
 "use strict";
 (function(){
   var S, es=null, timer=null, retry=null, seen=null, lastId="";
-  function reset(){seen={};lastId="";S={status:{},roster:[],groups:{},chat:{},looks:{},routines:{},usage:null,check:null};}
+  var hdirty=true,hsorted=[];
+  function reset(){seen={};lastId="";hdirty=true;hsorted=[];S={hist:[],status:{},roster:[],groups:{},chat:{},looks:{},routines:{},usage:null,check:null};}
   function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=String(text);return e;}
   function isObj(o){return o&&typeof o==="object"&&!Array.isArray(o);}
   function str(v,max){return typeof v==="string"?v.slice(0,max||200):"";}
@@ -89,6 +134,7 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
     if(typeof d.bot==="string"&&typeof d.status==="string"){
       var p=S.status[d.bot];
       if(!p||p.t<=t)S.status[d.bot]={status:d.status,step:str(d.step,120),t:t};
+      S.hist.push({bot:d.bot,status:d.status,step:str(d.step,120),t:t});if(S.hist.length>3000)S.hist.shift();hdirty=true;
     }
     if(Array.isArray(d.roster)){d.roster.forEach(function(n){if(typeof n==="string"&&S.roster.indexOf(n)<0)S.roster.push(n);});}
     if(isObj(d.groups))merge(S.groups,d.groups);
@@ -191,12 +237,17 @@ ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
     listeners.forEach(function(f){try{f();}catch(e){console.warn("3D view update failed",e&&e.message);}});
   }
   // read-only bridge for the optional 3D view (no topic exposed)
-  window.HQ={model:model,status:function(n){var st=S.status[n];return {key:statusKey(n),label:LABEL[statusKey(n)]||"no status",step:st?st.step:""};},
-    look:look,card:card,onRender:function(f){listeners.push(f);}};
+  function history(){if(hdirty){hsorted=S.hist.slice().sort(function(a,b){return a.t-b.t;});hdirty=false;}return hsorted;}
+  function stOf(e){var k=e&&LABEL[e.status]?e.status:"unknown";return {key:k,label:LABEL[k]||"no status",step:e?e.step:"",t:e?e.t:0};}
+  window.HQ={model:model,status:function(n){return stOf(S.status[n]);},
+    statusAt:function(n,T){var H=history(),last=null;for(var i=0;i<H.length&&H[i].t<=T;i++)if(H[i].bot===n)last=H[i];return stOf(last);},
+    history:function(){return history().map(function(e){return {bot:e.bot,status:e.status,t:e.t};});},
+    chat:function(n){var l=str(S.chat[n],300);return /^grokbot:\/\/app\/v1\/agent\?id=[A-Za-z0-9-]+$/.test(l)?l:"";},
+    ago:ago,look:look,card:card,onRender:function(f){listeners.push(f);}};
   var v3=null;
   function show3d(on){
     var b=document.getElementById("tog3d");b.setAttribute("aria-pressed",on?"true":"false");b.textContent=on?"2D cards":"3D view";
-    document.getElementById("floors").hidden=on;document.getElementById("view3d").hidden=!on;
+    document.getElementById("floors").hidden=on;document.getElementById("view3d").hidden=!on;document.body.classList.toggle("v3on",on);
     if(on){
       if(!v3)v3=import("./hq3d.js").then(function(m){return m.mount(document.getElementById("view3d"));}).catch(function(e){
         document.getElementById("v3msg").textContent="3D view couldn't start on this device ("+String(e&&e.message||e).slice(0,80)+"). Use the 2D cards.";return null;});
