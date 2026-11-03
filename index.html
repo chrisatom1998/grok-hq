@@ -1,284 +1,1546 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src https://ntfy.sh; img-src data:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grok HQ</title>
-<link rel="icon" href="data:,">
 <style>
-:root{--bg:#f4f1ea;--fg:#1d1d1f;--mut:#6b6b70;--card:#fff;--line:#e3ded3;--floor:#ebe6db;--acc:#1E86FC;--warn:#F59312}
-@media (prefers-color-scheme:dark){:root{--bg:#121316;--fg:#ececf0;--mut:#9a9aa3;--card:#1c1e23;--line:#2b2e35;--floor:#181a1f}}
-*{box-sizing:border-box}
-body{margin:0;font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--fg)}
-header{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
-h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px}
-.dot{width:10px;height:10px;border-radius:50%;background:#959595;display:inline-block}
-.dot.live{background:#14C16F;box-shadow:0 0 0 3px #14C16F33}.dot.off{background:#E5484D}
-.needs{background:var(--warn);color:#000;border-radius:999px;padding:2px 10px;font-weight:600;font-size:13px}
-.needs.zero{background:var(--floor);color:var(--mut)}
-.usage{flex:1;min-width:240px}
-.bar{height:8px;border-radius:4px;background:var(--floor);overflow:hidden;margin:4px 0}
-.bar>i{display:block;height:100%;background:var(--acc)}
-.small{font-size:12px;color:var(--mut)}
-.shares{display:flex;flex-wrap:wrap;gap:4px 10px}
-main{padding:16px;max-width:1200px;margin:0 auto}
-.floor{background:var(--floor);border:1px solid var(--line);border-radius:14px;margin:0 0 18px;padding:12px 14px 14px;position:relative}
-.floor h2{margin:0 0 10px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
-.card.need{border-color:var(--warn);box-shadow:0 0 0 2px #F5931255}
-.top{display:flex;gap:10px;align-items:center}
-.top svg{flex:none}
-.name{font-weight:600}
-.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:600;color:#fff}
-.s-working{background:#1E86FC}.s-done{background:#14C16F}.s-idle{background:#959595}.s-waiting_user{background:#F59312;color:#000}.s-error{background:#E5484D}.s-unknown{background:#555}
-.badge{background:var(--warn);color:#000;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700;margin-left:4px}
-.rep{background:#14C16F22;color:#14C16F;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:600;margin-left:4px}
-.step{color:var(--fg);word-break:break-word}
-a{color:var(--acc)}
-ul.rt{margin:2px 0 0;padding-left:16px;font-size:12px;color:var(--mut)}
-#setup{max-width:520px;margin:12vh auto;padding:20px;background:var(--card);border:1px solid var(--line);border-radius:14px}
-#setup input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit;margin:8px 0}
-#setup button{padding:9px 16px;border:0;border-radius:8px;background:var(--acc);color:#fff;font:inherit;cursor:pointer}
-.empty{color:var(--mut);text-align:center;padding:40px}
-.tog{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:4px 12px;font:inherit;font-size:13px;cursor:pointer}
-.tog[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
-body.v3on #app{display:flex;flex-direction:column;height:100vh;height:100dvh}
-body.v3on header{position:static}
-#view3d{position:relative;flex:1;min-height:320px;overflow:hidden}
-#view3d canvas{display:block;position:absolute;inset:0;width:100%;height:100%;outline:none;touch-action:none}
-.tog.sm{padding:3px 10px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
-.tog.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
-.chip .ct{opacity:.7}
-#v3bar{position:absolute;left:8px;right:8px;top:8px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;pointer-events:none;z-index:3}
-#v3bar>*{pointer-events:auto;max-width:100%}
-.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.chips::-webkit-scrollbar{display:none}
-.v3row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-#v3q{padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:inherit;font-size:13px;width:170px}
-#v3tip{position:absolute;z-index:4;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;max-width:240px;box-shadow:0 4px 16px #0004;display:flex;flex-direction:column;gap:3px}
-#v3msg{position:absolute;left:12px;bottom:54px;font-size:12px;color:var(--mut);pointer-events:none}
-#v3pop{position:absolute;right:12px;top:84px;width:300px;max-width:calc(100% - 24px);max-height:calc(100% - 150px);overflow:auto;z-index:3}
-.v3act{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-#v3time{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 12px;z-index:3}
-#view3d.replay #v3time{border-color:var(--warn);box-shadow:0 0 0 2px #F5931255}
-#v3slider{flex:1;min-width:0;accent-color:var(--acc)}
-#view3d.replay #v3slider{accent-color:var(--warn)}
-#v3tlabel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:45%}
-@media (max-width:600px){
-  header{padding:8px 10px;gap:6px 10px}
-  .usage{flex-basis:100%;min-width:0}
-  body.v3on .shares{display:none}
-  #v3msg{display:none}
-  .tog.sm{padding:6px 12px;font-size:13px}
-  #v3q{flex:1;min-width:110px;padding:6px 12px}
-  .v3row{width:100%}
-  #v3pop{left:8px;right:8px;top:auto;bottom:60px;width:auto;max-width:none;max-height:45%}
-  #v3time{padding:6px 6px 6px 12px}
-  #v3slider{height:28px}
-  #v3tlabel{max-width:38%;font-size:11px}
-}
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1e222e;
+    --border: #2a2f3d;
+    --text: #e6e8ef;
+    --muted: #9aa3b8;
+    --accent: #8ab4ff;
+    --green: #3ecf8e;
+    --amber: #f5b94a;
+    --red: #ff6b6b;
+    --blue: #6ea2ff;
+    --grey: #8b93a7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    font-size: 15px;
+    line-height: 1.45;
+    min-height: 100vh;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  header h1 { font-size: 20px; margin: 0 8px 0 0; letter-spacing: 0.3px; }
+  .conn { display: inline-flex; align-items: center; gap: 8px; }
+  .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--grey);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.06);
+    display: inline-block;
+  }
+  .dot.connected { background: var(--green); box-shadow: 0 0 0 2px rgba(62,207,142,0.25); }
+  .dot.reconnecting { background: var(--amber); box-shadow: 0 0 0 2px rgba(245,185,74,0.25); }
+  .dot.down { background: var(--red); box-shadow: 0 0 0 2px rgba(255,107,107,0.25); }
+  .dot.none { background: var(--grey); }
+  #needs-count {
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+  }
+  #needs-count.hot { background: rgba(245,185,74,0.15); border-color: var(--amber); color: #ffd98a; }
+  .meta { color: var(--muted); }
+  .meta strong { color: var(--text); font-weight: 500; }
+
+  main { padding: 20px; max-width: 1500px; margin: 0 auto; }
+
+  #add-topic {
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 24px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  #add-topic h2 { margin: 0 0 12px; font-size: 18px; }
+  #add-topic label { display: block; margin-bottom: 6px; color: var(--muted); }
+  .row { display: flex; gap: 8px; }
+  input[type="text"] {
+    flex: 1;
+    padding: 9px 12px;
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  button {
+    font: inherit;
+    font-weight: 600;
+    padding: 9px 16px;
+    color: #0b0d12;
+    background: var(--accent);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  .error { color: var(--red); margin-top: 8px; min-height: 1.2em; }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 10px; }
+
+  #empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 60px 0;
+    font-size: 17px;
+  }
+
+  section.team { margin-bottom: 28px; }
+  section.team h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin: 0 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .card.needs-you {
+    border-color: var(--amber);
+    background: linear-gradient(180deg, rgba(245,185,74,0.12), rgba(245,185,74,0.03)), var(--panel);
+    box-shadow: 0 0 0 1px rgba(245,185,74,0.35), 0 6px 20px rgba(245,185,74,0.12);
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .bot-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .badge {
+    flex: none;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #1a1200;
+    background: var(--amber);
+  }
+  .pill {
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .pill-working { color: #bcd3ff; background: rgba(110,162,255,0.16); border-color: rgba(110,162,255,0.45); }
+  .pill-done { color: #b8f3d8; background: rgba(62,207,142,0.16); border-color: rgba(62,207,142,0.45); }
+  .pill-idle { color: #d2d7e3; background: rgba(139,147,167,0.16); border-color: rgba(139,147,167,0.45); }
+  .pill-waiting_user { color: #ffe3a6; background: rgba(245,185,74,0.18); border-color: rgba(245,185,74,0.6); }
+  .pill-error { color: #ffc2c2; background: rgba(255,107,107,0.16); border-color: rgba(255,107,107,0.5); }
+  .pill-none { color: var(--muted); background: rgba(139,147,167,0.08); border-color: rgba(139,147,167,0.3); font-style: italic; }
+  .step {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .question {
+    padding: 10px 12px;
+    border-left: 3px solid var(--amber);
+    border-radius: 6px;
+    background: rgba(245,185,74,0.14);
+    color: #fff1cf;
+    font-size: 15px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .question-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #ffd98a;
+    margin-bottom: 4px;
+  }
+  .question.muted { font-style: italic; color: var(--muted); }
+  .muted { color: var(--muted); }
+  .when { color: var(--muted); font-size: 13px; }
+  .usage { display: flex; align-items: center; gap: 10px; font-size: 13px; margin-top: 2px; }
+  .bar {
+    flex: 1;
+    height: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .fill { height: 100%; background: var(--blue); border-radius: 999px; }
+  .pct { min-width: 38px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* View toggle + 3D view */
+  .views {
+    display: inline-flex;
+    margin-left: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .views button {
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: 0;
+    padding: 6px 14px;
+  }
+  .views button + button { border-left: 1px solid var(--border); }
+  .views button[aria-pressed="true"] { background: var(--accent); color: #0b0d12; }
+  .views button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
+  .views button:focus-visible { outline-offset: -3px; }
+  #webgl-note {
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+  }
+  #view3d-wrap {
+    position: relative;
+    height: calc(100vh - 150px);
+    min-height: 360px;
+    background: radial-gradient(ellipse at 50% 40%, #1b1f2b 0%, var(--panel) 60%, #12141c 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  #hq-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: grab;
+  }
+  #hq-canvas.dragging { cursor: grabbing; }
+  #hq-canvas:focus-visible { outline-offset: -3px; }
+  #hq-tip {
+    position: absolute;
+    left: 0; top: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 280px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: rgba(15,17,23,0.96);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+  }
+  #hq-tip .tip-name { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+  #hq-tip .tip-step { color: var(--muted); overflow-wrap: anywhere; }
+  .hq-help {
+    position: absolute;
+    right: 12px; bottom: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
-<div id="setup" hidden>
+<header>
   <h1>Grok HQ</h1>
-  <p>Add <b>#your-topic</b> to the end of this page's address, or paste your topic here. It stays in your browser and is only sent to ntfy.sh.</p>
-  <form id="f"><input id="t" autocomplete="off" spellcheck="false" placeholder="hq-..."><button>Open dashboard</button></form>
-</div>
-<div id="app" hidden>
-  <header>
-    <h1><span id="dot" class="dot"></span> Grok HQ</h1>
-    <button id="tog3d" class="tog" type="button" aria-pressed="false">3D view</button>
-    <span id="needs" class="needs zero">0 need you</span>
-    <div class="usage">
-      <div class="small" id="ulabel">Weekly usage: no data yet</div>
-      <div class="bar"><i id="ubar" style="width:0"></i></div>
-      <div class="small shares" id="shares"></div>
-    </div>
-  </header>
-  <main id="floors"></main>
-  <div id="view3d" hidden>
-    <div id="v3bar">
-      <div id="v3chips" class="chips" role="toolbar" aria-label="Filter bots"></div>
-      <div class="v3row">
-        <input id="v3q" type="search" placeholder="Search bots" aria-label="Search bots" autocomplete="off" spellcheck="false">
-        <button id="v3rot" class="tog sm" type="button" aria-pressed="false">Auto-rotate</button>
-        <button id="v3reset" class="tog sm" type="button">Reset view</button>
-        <button id="v3ping" class="tog sm" type="button" aria-pressed="false" title="Soft sound when a bot needs you">Ping off</button>
-      </div>
-    </div>
-    <div id="v3tip" hidden></div>
-    <div id="v3msg">Drag to rotate · scroll or pinch to zoom · click a bot or a floor sign · keys 1–9 pick a floor, Esc resets</div>
-    <div id="v3pop" hidden></div>
-    <div id="v3time"><input id="v3slider" type="range" min="0" max="1" value="1" aria-label="Replay today's status changes" disabled><span id="v3tlabel" class="small">Live</span><button id="v3live" class="tog sm" type="button" aria-pressed="true">Live</button></div>
+  <div class="conn">
+    <span id="conn-dot" class="dot none" aria-hidden="true"></span>
+    <span id="conn-text">Not connected</span>
   </div>
-</div>
+  <div id="needs-count" aria-live="polite">0 need you</div>
+  <div class="meta" id="last-update">Last update: never</div>
+  <div class="meta" id="usage-period" hidden></div>
+  <div class="views" role="group" aria-label="View">
+    <button type="button" id="view-cards" aria-pressed="true">Cards</button>
+    <button type="button" id="view-3d" aria-pressed="false">3D</button>
+  </div>
+</header>
+<main>
+  <section id="add-topic" hidden aria-labelledby="add-topic-title">
+    <h2 id="add-topic-title">Add your topic</h2>
+    <label for="topic-input">ntfy topic</label>
+    <div class="row">
+      <input type="text" id="topic-input" autocomplete="off" spellcheck="false" maxlength="64" placeholder="my-bots-topic">
+      <button type="button" id="topic-btn">Connect</button>
+    </div>
+    <div class="error" id="topic-error" role="alert"></div>
+    <div class="hint">Letters, digits, hyphens and underscores only (1–64 characters).</div>
+  </section>
+  <div id="webgl-note" role="status" hidden></div>
+  <div id="empty" hidden>Waiting for reports…</div>
+  <div id="view3d-wrap" hidden>
+    <canvas id="hq-canvas" role="application" tabindex="0" aria-label="3D view of 0 bots; use Cards view for full details" aria-describedby="hq-help"></canvas>
+    <div id="hq-tip" role="tooltip" hidden>
+      <span class="tip-name"></span>
+      <span class="tip-status pill pill-none"></span>
+      <span class="tip-step"></span>
+    </div>
+    <div class="hq-help" id="hq-help">Drag or arrow keys to orbit · Scroll, pinch or + / − to zoom · Hover or tap a bot for details · Esc hides details · Use Cards view for full details</div>
+    <div id="hq-announce" class="sr-only" role="status" aria-live="polite"></div>
+  </div>
+  <div id="grid"></div>
+</main>
 <script>
-"use strict";
-(function(){
-  var S, es=null, timer=null, retry=null, seen=null, lastId="";
-  var hdirty=true,hsorted=[];
-  function reset(){seen={};lastId="";hdirty=true;hsorted=[];S={hist:[],status:{},roster:[],groups:{},chat:{},looks:{},routines:{},usage:null,check:null};}
-  function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=String(text);return e;}
-  function isObj(o){return o&&typeof o==="object"&&!Array.isArray(o);}
-  function str(v,max){return typeof v==="string"?v.slice(0,max||200):"";}
-  function topic(){var h=decodeURIComponent(location.hash.slice(1)).trim();return /^[A-Za-z0-9_-]{1,64}$/.test(h)?h:"";}
-  function merge(dst,src){for(var k in src){if(Object.prototype.hasOwnProperty.call(src,k)&&k!=="__proto__"&&k!=="constructor"&&k!=="prototype")dst[k]=src[k];}}
-  function apply(m){
-    if(m.id){if(seen[m.id])return;seen[m.id]=1;lastId=m.id;}
-    var d; try{d=JSON.parse(m.message);}catch(e){return;}
-    if(!isObj(d))return;
-    var t=(m.time||Date.now()/1000)*1000;
-    if(typeof d.bot==="string"&&typeof d.status==="string"){
-      var p=S.status[d.bot];
-      if(!p||p.t<=t)S.status[d.bot]={status:d.status,step:str(d.step,120),t:t};
-      S.hist.push({bot:d.bot,status:d.status,step:str(d.step,120),t:t});if(S.hist.length>3000)S.hist.shift();hdirty=true;
-    }
-    if(Array.isArray(d.roster)){d.roster.forEach(function(n){if(typeof n==="string"&&S.roster.indexOf(n)<0)S.roster.push(n);});}
-    if(isObj(d.groups))merge(S.groups,d.groups);
-    if(isObj(d.chat))merge(S.chat,d.chat);
-    if(isObj(d.looks))merge(S.looks,d.looks);
-    if(isObj(d.routines)&&typeof d.routines.bot==="string"&&Array.isArray(d.routines.items))S.routines[d.routines.bot]=d.routines.items;
-    if(d.type==="usage"&&typeof d.total_used_pct==="number"){
-      if(!S.usage||S.usage.t<=t){var b={};if(S.usage&&S.usage.rt===d.resets_at)merge(b,S.usage.bots);if(isObj(d.bots))merge(b,d.bots);
-        S.usage={pct:d.total_used_pct,rt:d.resets_at,bots:b,t:t};}
-    }
-    if(isObj(d.check)&&Array.isArray(d.check.bots)){if(!S.check||S.check.t<=t)S.check={bots:d.check.bots,t:t};}
+(function () {
+  'use strict';
+
+  var TOPIC_RE = /^[A-Za-z0-9_-]{1,64}$/;
+  var STATUSES = new Set(['working', 'done', 'idle', 'waiting_user', 'error']);
+  var LABELS = new Map([
+    ['working', 'Working'],
+    ['done', 'Done'],
+    ['idle', 'Idle'],
+    ['waiting_user', 'Waiting on you'],
+    ['error', 'Error']
+  ]);
+  var CONN_TEXT = new Map([
+    ['connected', 'Connected'],
+    ['reconnecting', 'Reconnecting…'],
+    ['down', 'Disconnected'],
+    ['none', 'Not connected']
+  ]);
+  var MAX_BOTS = 100;            // one shared cap for roster + reported bots (cards/nodes)
+  var MAX_ROSTER = 100;
+  var MAX_USAGE = MAX_BOTS;      // usage identities retained; admitted bots take priority
+  var MAX_SEEN = 2000;
+  var MAX_MSG = 20000;
+  var MAX_FAILURES = 6;
+  var MAX_TIME = 8.64e12;        // largest unix-seconds value a JS Date can represent
+  var NAME_CAP = 64;             // bot names longer than this are rejected, never truncated
+  var TEAM_CAP = 64;
+  var STEP_STORE_CAP = 200;
+  var STEP_SHOW_CAP = 60;
+  var PERIOD_CAP = 64;
+  var POLL_TIMEOUT = 20000;      // ms before an in-flight catch-up poll is aborted
+  var POLL_RETRY_MAX = 60000;    // ms cap on the catch-up poll retry backoff
+  var MAX_POLL_BYTES = 8 * 1024 * 1024;
+  var MAX_POLL_EVENTS = 5000;
+  var MAX_POLL_LINE = 65536;     // a single JSON line longer than this is skipped
+
+  function $(id) { return document.getElementById(id); }
+  var el = {
+    dot: $('conn-dot'),
+    connText: $('conn-text'),
+    needs: $('needs-count'),
+    lastUpdate: $('last-update'),
+    period: $('usage-period'),
+    addBox: $('add-topic'),
+    input: $('topic-input'),
+    btn: $('topic-btn'),
+    err: $('topic-error'),
+    empty: $('empty'),
+    grid: $('grid')
+  };
+
+  // Connection state
+  var topic = null;
+  var es = null;
+  var gen = 0;
+  var attempt = 0;
+  var failures = 0;
+  var reconnectTimer = null;
+  var connState = 'none';
+  // Catch-up poll state
+  var pollCtl = null;            // AbortController of the in-flight poll
+  var pollSeq = 0;               // token of the current poll; stale polls are ignored
+  var openSeq = 0;               // bumped on every stream open; polls issued before it may miss the gap
+  var pollActive = false;
+  var pollRetryTimer = null;
+  var pollFailures = 0;
+  var lastEventTime = null;      // newest ntfy event time (unix s) seen on this topic
+  var owedSince = null;          // `since` window still owed because the last poll did not complete
+
+  // Data state (Maps only, never plain objects keyed by data)
+  var bots = new Map();          // name -> {status, step, time}
+  var roster = [];               // [{bot, team}]
+  var rosterSet = new Set();
+  var rosterTime = -Infinity;
+  var usage = new Map();         // name -> {pct, time}
+  var usagePeriod = null;
+  var periodTime = -Infinity;
+  var seen = new Set();
+  var lastUpdate = null;
+  var renderQueued = false;
+
+  function resetState() {
+    bots = new Map();
+    roster = [];
+    rosterSet = new Set();
+    rosterTime = -Infinity;
+    usage = new Map();
+    usagePeriod = null;
+    periodTime = -Infinity;
+    seen = new Set();
+    lastUpdate = null;
+    attempt = 0;
+    failures = 0;
+    pollFailures = 0;
+    lastEventTime = null;
+    owedSince = null;
   }
-  function ago(t){var s=Math.max(0,Math.round((Date.now()-t)/1000));if(s<60)return s+"s ago";if(s<3600)return Math.round(s/60)+"m ago";if(s<86400)return Math.round(s/3600)+"h ago";return Math.round(s/86400)+"d ago";}
-  function fmt(iso){var d=new Date(iso);return isNaN(d)?str(iso,40):d.toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit",month:"short",day:"numeric"});}
-  var NS="http://www.w3.org/2000/svg";
-  function sv(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
-  function poly(n,r,rot,cx,cy){var p=[];for(var i=0;i<n;i++){var a=rot+i*2*Math.PI/n;p.push((cx+r*Math.cos(a)).toFixed(1)+","+(cy+r*Math.sin(a)).toFixed(1));}return p.join(" ");}
-  function star(n,ro,ri,cx,cy){var p=[];for(var i=0;i<2*n;i++){var r=i%2?ri:ro,a=-Math.PI/2+i*Math.PI/n;p.push((cx+r*Math.cos(a)).toFixed(1)+","+(cy+r*Math.sin(a)).toFixed(1));}return p.join(" ");}
-  function hash(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h);}
-  var SHAPES=["sphere","cloud","rounded_square","star4","star6","clover","bubble","flower","drop","pill","triangle","pentagon","hexagon","cone","trio"];
-  var COLORS=["#A06B39","#E5484D","#FD690F","#F59312","#14C16F","#13B7A2","#1E86FC","#8F59F9","#F93498"];
-  function avatar(name){
-    var L=look(name),shape=L.shape,color=L.color,acc=L.accessory;
-    var s=sv("svg",{width:48,height:48,viewBox:"0 0 48 48","aria-hidden":"true"}),f={fill:color},c=24,cy=27;
-    switch(shape){
-      case"sphere":sv("circle",{cx:c,cy:cy,r:15,fill:color},s);break;
-      case"cloud":[[16,30,9],[32,30,9],[24,23,11]].forEach(function(q){sv("circle",{cx:q[0],cy:q[1],r:q[2],fill:color},s);});sv("rect",{x:12,y:28,width:24,height:11,rx:5,fill:color},s);break;
-      case"rounded_square":sv("rect",{x:10,y:13,width:28,height:28,rx:8,fill:color},s);break;
-      case"star4":sv("polygon",{points:star(4,17,7,c,cy),fill:color},s);break;
-      case"star6":sv("polygon",{points:star(6,17,10,c,cy),fill:color},s);break;
-      case"clover":[[18,22],[30,22],[18,34],[30,34]].forEach(function(q){sv("circle",{cx:q[0],cy:q[1],r:8,fill:color},s);});break;
-      case"bubble":sv("rect",{x:9,y:13,width:30,height:23,rx:10,fill:color},s);sv("polygon",{points:"16,34 14,43 24,35",fill:color},s);break;
-      case"flower":for(var i=0;i<6;i++){var a=i*Math.PI/3;sv("circle",{cx:c+9*Math.cos(a),cy:cy+9*Math.sin(a),r:7,fill:color},s);}sv("circle",{cx:c,cy:cy,r:7,fill:color},s);break;
-      case"drop":sv("path",{d:"M24 10 C30 20 38 26 38 32 A14 14 0 0 1 10 32 C10 26 18 20 24 10Z",fill:color},s);break;
-      case"pill":sv("rect",{x:8,y:18,width:32,height:18,rx:9,fill:color},s);break;
-      case"triangle":sv("polygon",{points:poly(3,18,-Math.PI/2,c,cy+3),fill:color},s);break;
-      case"pentagon":sv("polygon",{points:poly(5,16,-Math.PI/2,c,cy),fill:color},s);break;
-      case"hexagon":sv("polygon",{points:poly(6,16,0,c,cy),fill:color},s);break;
-      case"cone":sv("polygon",{points:"24,11 38,41 10,41",fill:color},s);sv("ellipse",{cx:24,cy:41,rx:14,ry:3,fill:color},s);break;
-      case"trio":[[24,19],[15,33],[33,33]].forEach(function(q){sv("circle",{cx:q[0],cy:q[1],r:8,fill:color},s);});break;
-    }
-    var ey=shape==="trio"?19:shape==="pill"?27:28,ex=shape==="trio"?3:5;
-    sv("circle",{cx:c-ex,cy:ey,r:2,fill:"#111"},s);sv("circle",{cx:c+ex,cy:ey,r:2,fill:"#111"},s);
-    if(acc==="glasses"){sv("circle",{cx:c-ex,cy:ey,r:4,fill:"none",stroke:"#111","stroke-width":1.5},s);sv("circle",{cx:c+ex,cy:ey,r:4,fill:"none",stroke:"#111","stroke-width":1.5},s);sv("line",{x1:c-ex+4,y1:ey,x2:c+ex-4,y2:ey,stroke:"#111","stroke-width":1.5},s);}
-    if(acc==="antenna"){sv("line",{x1:24,y1:12,x2:24,y2:3,stroke:"#888","stroke-width":2},s);sv("circle",{cx:24,cy:3,r:2.5,fill:"#E5484D"},s);}
-    if(acc==="stem"){sv("path",{d:"M24 13 Q25 6 29 4",stroke:"#14C16F","stroke-width":2.5,fill:"none"},s);sv("ellipse",{cx:30,cy:6,rx:4,ry:2,fill:"#14C16F"},s);}
-    if(acc==="bow"){sv("polygon",{points:"24,8 15,3 15,13",fill:"#F93498"},s);sv("polygon",{points:"24,8 33,3 33,13",fill:"#F93498"},s);sv("circle",{cx:24,cy:8,r:2.5,fill:"#F93498"},s);}
-    return s;
+
+  function noop() { /* intentionally empty */ }
+
+  // ---------- Connection ----------
+
+  function setConn(state) {
+    connState = state;
+    el.dot.className = 'dot ' + state;
+    el.connText.textContent = CONN_TEXT.get(state) || 'Not connected';
+    scheduleRender();
   }
-  var LABEL={working:"working",done:"done",idle:"idle",waiting_user:"needs you",error:"error"};
-  function model(){
-    var names=S.roster.slice();
-    [S.status,S.groups,S.chat,S.looks,S.routines].forEach(function(o){Object.keys(o).forEach(function(n){if(names.indexOf(n)<0)names.push(n);});});
-    var floors={};
-    names.forEach(function(n){var g=str(S.groups[n],40)||"Unassigned";(floors[g]=floors[g]||[]).push(n);});
-    var order=Object.keys(floors).sort(function(a,b){if(a==="Ops")return 1;if(b==="Ops")return -1;if(a==="Unassigned")return 1;if(b==="Unassigned")return -1;return a.localeCompare(b);});
-    return {names:names,floors:floors,order:order};
+
+  function closeSource(src) {
+    if (!src) return;
+    src.onopen = null;
+    src.onmessage = null;
+    src.onerror = null;
+    try { src.close(); } catch (_) { /* ignore */ }
   }
-  function statusKey(n){var st=S.status[n];return st&&LABEL[st.status]?st.status:"unknown";}
-  function look(n){
-    var L=isObj(S.looks[n])?S.looks[n]:{},h=hash(n);
-    return {shape:SHAPES.indexOf(L.shape)>=0?L.shape:SHAPES[h%SHAPES.length],
-      color:/^#?[0-9a-fA-F]{6}$/.test(L.color||"")?(L.color[0]==="#"?L.color:"#"+L.color):COLORS[h%COLORS.length],
-      accessory:["none","glasses","antenna","stem","bow"].indexOf(L.accessory)>=0?L.accessory:"none"};
+
+  function abortPoll() {
+    if (pollRetryTimer !== null) { clearTimeout(pollRetryTimer); pollRetryTimer = null; }
+    if (pollCtl) { var c = pollCtl; pollCtl = null; try { c.abort(); } catch (_) { /* ignore */ } }
+    pollSeq++;
+    pollActive = false;
   }
-  function card(n){
-    var st=S.status[n],k=statusKey(n);
-    var c=el("div","card"+(k==="waiting_user"?" need":""));
-    var top=el("div","top");top.appendChild(avatar(n));
-    var box=el("div");var nm=el("div","name",n);
-    if(k==="waiting_user")nm.appendChild(el("span","badge","NEEDS YOU"));
-    if(S.check&&st&&st.t>=S.check.t&&S.check.bots.indexOf(n)>=0)nm.appendChild(el("span","rep","reported"));
-    box.appendChild(nm);
-    var line=el("div");line.appendChild(el("span","pill s-"+k,LABEL[k]||"no status"));
-    if(st)line.appendChild(el("span","small"," · "+ago(st.t)));
-    box.appendChild(line);top.appendChild(box);c.appendChild(top);
-    if(st&&st.step)c.appendChild(el("div","step",st.step));
-    var link=str(S.chat[n],300);
-    if(/^grokbot:\/\/app\/v1\/agent\?id=[A-Za-z0-9-]+$/.test(link)){var a=el("a",null,"open chat →");a.href=link;c.appendChild(a);}
-    var r=S.routines[n];
-    if(Array.isArray(r)&&r.length){var ul=el("ul","rt");r.forEach(function(it){if(!isObj(it))return;var t=str(it.name,60)+(it.schedule?" — "+str(it.schedule,60):"")+(it.next_run?" · next "+fmt(it.next_run):"");ul.appendChild(el("li",null,t));});c.appendChild(ul);}
-    return c;
+
+  function disconnect() {
+    gen++;
+    if (reconnectTimer !== null) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    abortPoll();
+    if (es) { closeSource(es); es = null; }
   }
-  var listeners=[];
-  function render(){
-    var M=model(),need=0;
-    var root=document.getElementById("floors");root.replaceChildren();
-    if(!M.names.length)root.appendChild(el("div","empty","Waiting for your bots to check in…"));
-    M.order.forEach(function(g,i){
-      var fl=el("section","floor");fl.appendChild(el("h2",null,"Floor "+(M.order.length-i)+" · "+g));
-      var grid=el("div","grid");fl.appendChild(grid);
-      M.floors[g].forEach(function(n){if(statusKey(n)==="waiting_user")need++;grid.appendChild(card(n));});
-      root.appendChild(fl);
+
+  function connect() {
+    var myGen = ++gen;
+    setConn('reconnecting');
+    startAttempt(myGen);
+  }
+
+  // One connection attempt = open the live stream AND run a bounded catch-up poll.
+  // Both run concurrently so a stalled poll can never block the stream; events are
+  // deduplicated by ntfy id and ordered by ntfy time, so overlap is harmless.
+  function startAttempt(myGen) {
+    if (myGen !== gen) return;
+    openStream(myGen);
+    runPoll(myGen);
+  }
+
+  // Catch-up window: ntfy supports since=<unix seconds>. Use the newest event time we
+  // have seen (keepalives count: the server emits them in order with messages), else 12h.
+  function sinceParam() {
+    if (owedSince !== null) return owedSince;
+    return lastEventTime === null ? '12h' : String(Math.floor(lastEventTime));
+  }
+
+  function runPoll(myGen) {
+    if (myGen !== gen) return;
+    abortPoll();
+    var mySeq = ++pollSeq;
+    var myOpen = openSeq;
+    var since = sinceParam();
+    owedSince = since; // stays owed until a poll for this window completes
+    pollActive = true;
+    pollEvents(myGen, since).then(function (res) {
+      if (myGen !== gen || mySeq !== pollSeq) return;
+      pollActive = false;
+      scheduleRender();
+      if (!res.ok) {
+        var delay = Math.min(POLL_RETRY_MAX, 5000 * Math.pow(2, Math.min(pollFailures, 6)));
+        pollFailures++;
+        pollRetryTimer = setTimeout(function () {
+          pollRetryTimer = null;
+          runPoll(myGen);
+        }, Math.round(delay - Math.random() * delay * 0.25));
+        return;
+      }
+      pollFailures = 0;
+      // A poll issued before the stream (re)opened only covers up to its own response time,
+      // so a message published between that and the subscription could be missed; chain one
+      // follow-up poll from the last processed event. Capped responses continue the same way.
+      var stale = myOpen !== openSeq;
+      if (res.capped || stale) {
+        var next = res.lastTime !== null ? String(res.lastTime) : since;
+        if (res.capped && !stale && next === since) { owedSince = null; return; } // no progress possible
+        owedSince = next;
+        pollRetryTimer = setTimeout(function () { pollRetryTimer = null; runPoll(myGen); }, stale ? 0 : 1000);
+      } else {
+        owedSince = null;
+      }
     });
-    var nb=document.getElementById("needs");nb.textContent=need+" need"+(need===1?"s":"")+" you";nb.className="needs"+(need?"":" zero");
-    var u=S.usage,sh=document.getElementById("shares");sh.replaceChildren();
-    if(u){var p=Math.max(0,Math.min(100,u.pct));document.getElementById("ubar").style.width=p+"%";
-      document.getElementById("ulabel").textContent="Weekly usage: "+p+"%"+(u.rt?" · resets "+fmt(u.rt):"")+" · "+ago(u.t);
-      Object.keys(u.bots).sort(function(a,b){return u.bots[b]-u.bots[a];}).forEach(function(b){if(typeof u.bots[b]==="number")sh.appendChild(el("span",null,b+" "+u.bots[b]+"%"));});}
-    listeners.forEach(function(f){try{f();}catch(e){console.warn("3D view update failed",e&&e.message);}});
   }
-  // read-only bridge for the optional 3D view (no topic exposed)
-  function history(){if(hdirty){hsorted=S.hist.slice().sort(function(a,b){return a.t-b.t;});hdirty=false;}return hsorted;}
-  function stOf(e){var k=e&&LABEL[e.status]?e.status:"unknown";return {key:k,label:LABEL[k]||"no status",step:e?e.step:"",t:e?e.t:0};}
-  window.HQ={model:model,status:function(n){return stOf(S.status[n]);},
-    statusAt:function(n,T){var H=history(),last=null;for(var i=0;i<H.length&&H[i].t<=T;i++)if(H[i].bot===n)last=H[i];return stOf(last);},
-    history:function(){return history().map(function(e){return {bot:e.bot,status:e.status,t:e.t};});},
-    chat:function(n){var l=str(S.chat[n],300);return /^grokbot:\/\/app\/v1\/agent\?id=[A-Za-z0-9-]+$/.test(l)?l:"";},
-    ago:ago,look:look,card:card,onRender:function(f){listeners.push(f);}};
-  var v3=null;
-  function show3d(on){
-    var b=document.getElementById("tog3d");b.setAttribute("aria-pressed",on?"true":"false");b.textContent=on?"2D cards":"3D view";
-    document.getElementById("floors").hidden=on;document.getElementById("view3d").hidden=!on;document.body.classList.toggle("v3on",on);
-    if(on){
-      if(!v3)v3=import("./hq3d.js").then(function(m){return m.mount(document.getElementById("view3d"));}).catch(function(e){
-        document.getElementById("v3msg").textContent="3D view couldn't start on this device ("+String(e&&e.message||e).slice(0,80)+"). Use the 2D cards.";return null;});
-      v3.then(function(api){if(api)api.setActive(true);});
-    }else if(v3)v3.then(function(api){if(api)api.setActive(false);});
+
+  // Fetch https://ntfy.sh/<topic>/json?poll=1&since=... and process it line by line while
+  // streaming, with a total byte ceiling, an event-count ceiling, a per-line ceiling, a
+  // timeout, and an AbortController that disconnect() can trigger. Never rejects.
+  function pollEvents(myGen, since) {
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    pollCtl = ctl;
+    var timer = setTimeout(function () { if (ctl) { try { ctl.abort(); } catch (_) { /* ignore */ } } }, POLL_TIMEOUT);
+    var opts = { cache: 'no-store' };
+    if (ctl) opts.signal = ctl.signal;
+    var res = { ok: false, capped: false, lastTime: null };
+    var changed = false;
+    var events = 0;
+    var buf = '';
+    var dropping = false; // inside a line that exceeded MAX_POLL_LINE
+
+    function handleLine(line) {
+      if (!line.trim()) return true;
+      if (events >= MAX_POLL_EVENTS) { res.capped = true; return false; }
+      events++;
+      var ev;
+      try { ev = JSON.parse(line); } catch (_) { return true; }
+      if (processEvent(ev)) changed = true;
+      if (ev && typeof ev === 'object' && validTime(ev.time)) res.lastTime = Math.floor(ev.time);
+      return true;
+    }
+    function feed(chunk) {
+      buf += chunk;
+      var idx;
+      while ((idx = buf.indexOf('\n')) !== -1) {
+        var line = buf.slice(0, idx);
+        buf = buf.slice(idx + 1);
+        if (dropping) { dropping = false; continue; }
+        if (!handleLine(line)) return false;
+      }
+      if (buf.length > MAX_POLL_LINE) { buf = ''; dropping = true; }
+      return true;
+    }
+    function finishBuffer() {
+      if (buf && !dropping) handleLine(buf);
+      buf = '';
+    }
+
+    return fetch('https://ntfy.sh/' + topic + '/json?poll=1&since=' + since, opts)
+      .then(function (r) {
+        if (!r.ok) throw new Error('http');
+        if (!r.body || typeof r.body.getReader !== 'function' || typeof TextDecoder !== 'function') {
+          return r.text().then(function (text) {
+            if (myGen !== gen) return;
+            if (text.length > MAX_POLL_BYTES) { text = text.slice(0, MAX_POLL_BYTES); res.capped = true; }
+            if (feed(text) && !res.capped) finishBuffer();
+            res.ok = true;
+          });
+        }
+        var reader = r.body.getReader();
+        var dec = new TextDecoder();
+        var total = 0;
+        function stop() {
+          res.ok = true;
+          return reader.cancel().catch(noop);
+        }
+        function pump() {
+          return reader.read().then(function (chunk) {
+            if (myGen !== gen) return reader.cancel().catch(noop);
+            if (chunk.done) { finishBuffer(); res.ok = true; return; }
+            total += chunk.value.byteLength;
+            if (total > MAX_POLL_BYTES) { res.capped = true; return stop(); }
+            if (!feed(dec.decode(chunk.value, { stream: true }))) return stop();
+            return pump();
+          });
+        }
+        return pump();
+      })
+      .catch(function () { res.ok = false; })
+      .then(function () {
+        clearTimeout(timer);
+        if (pollCtl === ctl) pollCtl = null;
+        if (myGen === gen && changed) scheduleRender();
+        return res;
+      });
   }
-  document.getElementById("tog3d").addEventListener("click",function(){show3d(this.getAttribute("aria-pressed")!=="true");});
-  function setDot(c){var d=document.getElementById("dot");d.className="dot "+c;d.title=c==="live"?"live":"offline";}
-  function start(){
-    if(es){es.close();es=null;}clearTimeout(retry);
-    var T=topic();
-    document.getElementById("setup").hidden=!!T;document.getElementById("app").hidden=!T;
-    if(!T)return;
-    reset();render();setDot("");
-    var base="https://ntfy.sh/"+encodeURIComponent(T);
-    fetch(base+"/json?poll=1&since=12h",{referrerPolicy:"no-referrer"}).then(function(r){return r.text();}).then(function(txt){
-      txt.split("\n").forEach(function(l){if(!l)return;try{var m=JSON.parse(l);if(m.event==="message")apply(m);}catch(e){}});render();
-    }).catch(function(){}).then(function(){connect(base,T);});
+
+  function openStream(myGen) {
+    if (myGen !== gen) return;
+    var src;
+    try {
+      src = new EventSource('https://ntfy.sh/' + topic + '/sse');
+    } catch (_) {
+      scheduleReconnect(myGen);
+      return;
+    }
+    es = src;
+    // Every callback checks both the topic generation and that this source is still the
+    // installed one, so a stale source can never drive state or spawn a parallel stream.
+    src.onopen = function () {
+      if (myGen !== gen || es !== src) return;
+      attempt = 0;
+      failures = 0;
+      openSeq++;
+      setConn('connected');
+      // Catch up from the last seen event now that the subscription is live. If a poll is
+      // already in flight it will chain its own follow-up (see runPoll) instead.
+      if (!pollActive) runPoll(myGen);
+    };
+    src.onmessage = function (e) {
+      if (myGen !== gen || es !== src) return;
+      var ev;
+      try { ev = JSON.parse(e.data); } catch (_) { return; }
+      if (processEvent(ev)) scheduleRender();
+    };
+    src.onerror = function () {
+      if (myGen !== gen || es !== src) return;
+      es = null;
+      closeSource(src);
+      scheduleReconnect(myGen);
+    };
   }
-  function connect(base,T){
-    if(topic()!==T)return;
-    // resume from the last message the poll saw, so nothing posted in between is missed (duplicates are skipped by id)
-    es=new EventSource(base+"/sse?since="+encodeURIComponent(lastId||"12h"));
-    es.onopen=function(){setDot("live");};
-    es.onmessage=function(e){try{var m=JSON.parse(e.data);if(m.event==="message"){apply(m);render();}}catch(x){}};
-    es.onerror=function(){setDot("off");if(es&&es.readyState===2){es=null;retry=setTimeout(function(){connect(base,T);},5000);}};
+
+  function scheduleReconnect(myGen) {
+    failures++;
+    setConn(failures >= MAX_FAILURES ? 'down' : 'reconnecting');
+    var base = Math.min(30000, 1000 * Math.pow(2, Math.min(attempt, 10)));
+    attempt++;
+    var delay = Math.round(base - Math.random() * base * 0.25); // jitter, never above 30s
+    if (reconnectTimer !== null) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(function () {
+      reconnectTimer = null;
+      startAttempt(myGen); // replacement stream + deduplicated catch-up poll for the gap
+    }, delay);
   }
-  document.getElementById("f").addEventListener("submit",function(e){e.preventDefault();var v=document.getElementById("t").value.trim().replace(/^#/,"");if(v)location.hash=v;});
-  window.addEventListener("hashchange",start);
-  setInterval(function(){if(topic())render();},30000);
-  start();
+
+  // ---------- Topic handling ----------
+
+  function applyHash() {
+    var raw = location.hash;
+    if (raw.charAt(0) === '#') raw = raw.slice(1);
+    disconnect();
+    resetState();
+    el.err.textContent = ''; // never carry a stale validation error across hash changes
+    if (TOPIC_RE.test(raw)) {
+      topic = raw;
+      el.addBox.hidden = true;
+      connect();
+    } else {
+      topic = null;
+      el.addBox.hidden = false;
+      setConn('none');
+      if (raw.length) {
+        el.err.textContent = 'That topic in the URL is not valid. Use 1–64 letters, digits, hyphens or underscores.';
+      }
+      try { el.input.focus(); } catch (_) { /* ignore */ }
+    }
+    scheduleRender();
+  }
+
+  function submitTopic() {
+    var val = el.input.value.trim();
+    if (!TOPIC_RE.test(val)) {
+      el.err.textContent = 'Invalid topic. Use 1–64 letters, digits, hyphens or underscores.';
+      return;
+    }
+    el.err.textContent = '';
+    location.hash = '#' + val;
+  }
+
+  el.btn.addEventListener('click', submitTopic);
+  el.input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitTopic(); }
+  });
+  window.addEventListener('hashchange', applyHash);
+
+  // ---------- Event processing ----------
+
+  function cardCount() {
+    var n = rosterSet.size;
+    bots.forEach(function (_, k) { if (!rosterSet.has(k)) n++; });
+    return n;
+  }
+
+  // Unix seconds that a JS Date can represent (toISOString throws outside this range).
+  function validTime(t) {
+    return typeof t === 'number' && Number.isFinite(t) && t >= 0 && t <= MAX_TIME;
+  }
+
+  function validName(s) {
+    return typeof s === 'string' && s.length > 0 && s.length <= NAME_CAP;
+  }
+
+  function processEvent(ev) {
+    if (!ev || typeof ev !== 'object') return false;
+    if (!validTime(ev.time)) return false;
+    // Track the newest event time of any kind (open/keepalive included) for catch-up polls.
+    if (lastEventTime === null || ev.time > lastEventTime) lastEventTime = ev.time;
+    if (typeof ev.id === 'string') {
+      if (seen.has(ev.id)) return false;
+      seen.add(ev.id);
+      if (seen.size > MAX_SEEN) {
+        var it = seen.values().next();
+        if (!it.done) seen.delete(it.value);
+      }
+    }
+    if (ev.event !== 'message') return false;
+    if (typeof ev.message !== 'string') return false;
+    if (ev.message.length > MAX_MSG) return false;
+    var data;
+    try { data = JSON.parse(ev.message); } catch (_) { return false; }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+    var time = ev.time;
+    var changed = false;
+    if (data.type === undefined) changed = applyStatus(data, time);
+    else if (data.type === 'roster') changed = applyRoster(data, time);
+    else if (data.type === 'usage') changed = applyUsage(data, time);
+    if (changed && (lastUpdate === null || time > lastUpdate)) lastUpdate = time;
+    return changed;
+  }
+
+  function applyStatus(d, time) {
+    if (!validName(d.bot)) return false;
+    if (typeof d.status !== 'string' || !STATUSES.has(d.status)) return false;
+    if (d.step !== undefined && typeof d.step !== 'string') return false;
+    var name = d.bot;
+    var existing = bots.get(name);
+    if (existing) {
+      if (time < existing.time) return false;
+    } else if (!rosterSet.has(name) && cardCount() >= MAX_BOTS) {
+      return false;
+    }
+    bots.set(name, {
+      status: d.status,
+      step: d.step === undefined ? '' : d.step.slice(0, STEP_STORE_CAP),
+      time: time
+    });
+    return true;
+  }
+
+  function applyRoster(d, time) {
+    if (!Array.isArray(d.bots)) return false;
+    if (time < rosterTime) return false;
+    var list = [];
+    var set = new Set();
+    for (var i = 0; i < d.bots.length && list.length < MAX_ROSTER; i++) {
+      var e = d.bots[i];
+      if (!e || typeof e !== 'object') continue;
+      if (!validName(e.bot)) continue;
+      if (typeof e.team !== 'string' || e.team.length === 0) continue;
+      var b = e.bot;
+      if (set.has(b)) continue;
+      set.add(b);
+      list.push({ bot: b, team: e.team.slice(0, TEAM_CAP) });
+    }
+    roster = list;
+    rosterSet = set;
+    rosterTime = time;
+    // Keep the union of roster + reported bots at MAX_BOTS: the roster has priority,
+    // so drop the oldest-reported non-roster bots until the union fits.
+    var extra = [];
+    bots.forEach(function (v, k) { if (!set.has(k)) extra.push({ name: k, time: v.time }); });
+    var over = set.size + extra.length - MAX_BOTS;
+    if (over > 0) {
+      extra.sort(function (a, b2) { return a.time - b2.time; });
+      for (var x = 0; x < over && x < extra.length; x++) bots.delete(extra[x].name);
+    }
+    return true;
+  }
+
+  function admitted(name) { return rosterSet.has(name) || bots.has(name); }
+
+  // Usage is capped like bots. When full, an admitted bot may evict a non-admitted entry.
+  function makeUsageRoom(name) {
+    if (!admitted(name)) return false;
+    var victim = null;
+    usage.forEach(function (_, k) { if (victim === null && !admitted(k)) victim = k; });
+    if (victim === null) return false;
+    usage.delete(victim);
+    return true;
+  }
+
+  function applyUsage(d, time) {
+    if (!Array.isArray(d.bots)) return false;
+    if (d.period !== undefined && typeof d.period !== 'string') return false;
+    var changed = false;
+    if (typeof d.period === 'string' && time >= periodTime) {
+      usagePeriod = d.period.slice(0, PERIOD_CAP);
+      periodTime = time;
+      changed = true;
+    }
+    for (var i = 0; i < d.bots.length; i++) {
+      var e = d.bots[i];
+      if (!e || typeof e !== 'object') continue;
+      if (!validName(e.bot)) continue;
+      if (typeof e.pct !== 'number' || !Number.isFinite(e.pct)) continue;
+      var b = e.bot;
+      var prev = usage.get(b);
+      if (prev) {
+        if (time < prev.time) continue;
+      } else if (usage.size >= MAX_USAGE && !makeUsageRoom(b)) {
+        continue;
+      }
+      var pct = Math.min(100, Math.max(0, e.pct));
+      usage.set(b, { pct: pct, time: time });
+      changed = true;
+    }
+    return changed;
+  }
+
+  // ---------- Rendering ----------
+
+  function relTime(ts, now) {
+    var diff = Math.max(0, Math.floor(now - ts));
+    if (diff < 5) return 'just now';
+    if (diff < 60) return diff + 's ago';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  function absTime(ts) {
+    return new Date(ts * 1000).toLocaleString();
+  }
+
+  // Non-throwing: returns null for timestamps a Date cannot represent.
+  function isoTime(ts) {
+    try { return new Date(ts * 1000).toISOString(); } catch (_) { return null; }
+  }
+
+  function mk(tag, cls) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    return n;
+  }
+
+  function scheduleRender() {
+    if (renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(render);
+  }
+
+  function buildCard(name, st, now) {
+    var card = mk('article', 'card');
+    card.setAttribute('data-bot', name);
+    var status = st ? st.status : 'none';
+    card.classList.add('status-' + status);
+    if (status === 'waiting_user') card.classList.add('needs-you');
+
+    var head = mk('div', 'card-head');
+    var nm = mk('h3', 'bot-name');
+    nm.textContent = name;
+    nm.setAttribute('title', name);
+    head.appendChild(nm);
+    if (status === 'waiting_user') {
+      var badge = mk('span', 'badge');
+      badge.textContent = 'NEEDS YOU';
+      head.appendChild(badge);
+    }
+    card.appendChild(head);
+
+    var pill = mk('span', 'pill pill-' + status);
+    pill.textContent = st ? LABELS.get(status) : 'No report yet';
+    card.appendChild(pill);
+
+    if (status === 'waiting_user') {
+      // The step is the question the bot is asking: show it in full (stored cap), wrapping.
+      var q = mk('div', 'question');
+      var qlabel = mk('span', 'question-label');
+      qlabel.textContent = 'Question:';
+      q.appendChild(qlabel);
+      if (st.step) {
+        q.appendChild(document.createTextNode(st.step));
+      } else {
+        q.appendChild(document.createTextNode('Waiting for your reply'));
+        q.classList.add('muted');
+      }
+      card.appendChild(q);
+    } else {
+      var step = mk('div', 'step');
+      if (st && st.step) {
+        var full = st.step;
+        step.textContent = full.length > STEP_SHOW_CAP ? full.slice(0, STEP_SHOW_CAP) + '…' : full;
+        step.setAttribute('title', full);
+      } else {
+        step.textContent = st ? '—' : 'no report yet';
+        step.classList.add('muted');
+      }
+      card.appendChild(step);
+    }
+
+    var when = mk('time', 'when');
+    if (st) {
+      when.textContent = relTime(st.time, now);
+      when.setAttribute('title', absTime(st.time));
+      var iso = isoTime(st.time);
+      if (iso !== null) when.setAttribute('datetime', iso);
+    } else {
+      when.textContent = '—';
+    }
+    card.appendChild(when);
+
+    var ubox = mk('div', 'usage');
+    var u = usage.get(name);
+    if (u) {
+      var rounded = Math.round(u.pct);
+      var bar = mk('div', 'bar');
+      bar.setAttribute('role', 'progressbar');
+      bar.setAttribute('aria-valuenow', String(rounded));
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', '100');
+      bar.setAttribute('aria-label', 'Usage share for ' + name);
+      var fill = mk('div', 'fill');
+      fill.style.width = u.pct + '%';
+      bar.appendChild(fill);
+      var pct = mk('span', 'pct');
+      pct.textContent = rounded + '%';
+      ubox.appendChild(bar);
+      ubox.appendChild(pct);
+    } else {
+      ubox.textContent = 'no usage data';
+      ubox.classList.add('muted');
+    }
+    card.appendChild(ubox);
+
+    return card;
+  }
+
+  function render() {
+    renderQueued = false;
+    var now = Date.now() / 1000;
+
+    // Group by team in roster order; non-roster bots under "Other", last.
+    var sections = [];
+    var byTeam = new Map();
+    for (var i = 0; i < roster.length; i++) {
+      var r = roster[i];
+      var list = byTeam.get(r.team);
+      if (!list) { list = []; byTeam.set(r.team, list); sections.push({ name: r.team, bots: list }); }
+      list.push(r.bot);
+    }
+    var others = [];
+    bots.forEach(function (_, k) { if (!rosterSet.has(k)) others.push(k); });
+    if (others.length) {
+      others.sort();
+      sections.push({ name: 'Other', bots: others });
+    }
+
+    var frag = document.createDocumentFragment();
+    var needs = 0;
+    var total = 0;
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
+      var section = mk('section', 'team');
+      var h = mk('h2');
+      h.textContent = sec.name;
+      section.appendChild(h);
+      var cards = mk('div', 'cards');
+      for (var j = 0; j < sec.bots.length; j++) {
+        var name = sec.bots[j];
+        var st = bots.get(name);
+        if (st && st.status === 'waiting_user') needs++;
+        total++;
+        cards.appendChild(buildCard(name, st, now));
+      }
+      section.appendChild(cards);
+      frag.appendChild(section);
+    }
+    el.grid.replaceChildren(frag);
+    update3D(sections);
+    applyViewVisibility();
+
+    // Only claim "waiting" once the catch-up poll has finished, to avoid a flash of empty state.
+    el.empty.hidden = !(topic !== null && connState === 'connected' && !pollActive && total === 0);
+
+    var needsText = needs + ' need you';
+    if (el.needs.textContent !== needsText) el.needs.textContent = needsText;
+    el.needs.classList.toggle('hot', needs > 0);
+
+    if (lastUpdate !== null) {
+      el.lastUpdate.textContent = 'Last update: ' + relTime(lastUpdate, now);
+      el.lastUpdate.setAttribute('title', absTime(lastUpdate));
+    } else {
+      el.lastUpdate.textContent = 'Last update: never';
+      el.lastUpdate.removeAttribute('title');
+    }
+
+    if (usagePeriod !== null && usagePeriod.length) {
+      el.period.textContent = 'Usage period: ' + usagePeriod;
+      el.period.hidden = false;
+    } else {
+      el.period.textContent = '';
+      el.period.hidden = true;
+    }
+  }
+
+  setInterval(scheduleRender, 30000);
+
+  // ---------- 3D view (hand-rolled Canvas 2D perspective projection) ----------
+
+  var VIEW_KEY = 'grokhq:view';
+  var LABEL_SHOW_CAP = 28;
+  var ZOOM_MIN = 0.4;
+  var ZOOM_MAX = 4;
+  var PITCH_MAX = 1.2;
+  // Node colors come from the same :root palette the status pills use.
+  var STATUS_VAR = new Map([
+    ['working', '--blue'],
+    ['done', '--green'],
+    ['idle', '--grey'],
+    ['waiting_user', '--amber'],
+    ['error', '--red'],
+    ['none', '--grey']
+  ]);
+  var STATUS_FALLBACK = new Map([
+    ['working', '#6ea2ff'],
+    ['done', '#3ecf8e'],
+    ['idle', '#8b93a7'],
+    ['waiting_user', '#f5b94a'],
+    ['error', '#ff6b6b'],
+    ['none', '#8b93a7']
+  ]);
+
+  var el3 = {
+    wrap: $('view3d-wrap'),
+    canvas: $('hq-canvas'),
+    tip: $('hq-tip'),
+    announce: $('hq-announce'),
+    note: $('webgl-note'),
+    btnCards: $('view-cards'),
+    btn3d: $('view-3d')
+  };
+  var tipName = el3.tip.querySelector('.tip-name');
+  var tipStatus = el3.tip.querySelector('.tip-status');
+  var tipStep = el3.tip.querySelector('.tip-step');
+
+  var view = 'cards';
+  var g = {
+    available: false,
+    ctx: null,
+    w: 0, h: 0, dpr: 1,
+    yaw: 0.6, pitch: 0.35, zoom: 1,
+    nodes: [], labels: [], proj: [],
+    sceneR: 1,
+    hasPulse: false,
+    reduced: false,
+    dirty: true,
+    running: false,
+    lastT: 0,
+    pointers: new Map(),
+    drag: null,
+    pinch: null,
+    tipNode: null,
+    rgb: new Map()
+  };
+
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+  function trunc(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+  function hexRgb(h) {
+    return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  }
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function mix(c, t, to) {
+    return [
+      Math.round(c[0] + (to - c[0]) * t),
+      Math.round(c[1] + (to - c[1]) * t),
+      Math.round(c[2] + (to - c[2]) * t)
+    ];
+  }
+
+  function readPalette() {
+    var cs = null;
+    try { cs = getComputedStyle(document.documentElement); } catch (_) { cs = null; }
+    STATUS_VAR.forEach(function (cssVar, status) {
+      var val = cs ? cs.getPropertyValue(cssVar).trim() : '';
+      if (!/^#[0-9a-fA-F]{6}$/.test(val)) val = STATUS_FALLBACK.get(status);
+      g.rgb.set(status, hexRgb(val));
+    });
+  }
+
+  function detect3D() {
+    if (window.__HQ_FORCE_NO_WEBGL === true) return false;
+    var probe = document.createElement('canvas');
+    var gl = null;
+    try { gl = probe.getContext('webgl') || probe.getContext('experimental-webgl'); } catch (_) { gl = null; }
+    if (!gl) return false;
+    try { var lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext(); } catch (_) { /* ignore */ }
+    var ctx = null;
+    try { ctx = el3.canvas.getContext('2d'); } catch (_) { ctx = null; }
+    if (!ctx) return false;
+    g.ctx = ctx;
+    return true;
+  }
+
+  // webglMissing: true when WebGL detection failed (required message); false for a
+  // runtime layout/draw error, which gets a generic message so it is not misreported.
+  function fallback3D(webglMissing) {
+    g.available = false;
+    g.running = false;
+    el3.btn3d.disabled = true;
+    el3.note.textContent = webglMissing
+      ? '3D view unavailable (WebGL not supported) — showing cards.'
+      : '3D view failed — showing cards.';
+    el3.note.hidden = false;
+    setView('cards', false);
+  }
+
+  function init3D() {
+    try {
+      g.available = detect3D();
+      if (!g.available) { fallback3D(true); return; }
+      readPalette();
+      var mq = null;
+      try { mq = window.matchMedia('(prefers-reduced-motion: reduce)'); } catch (_) { mq = null; }
+      if (mq) {
+        g.reduced = !!mq.matches;
+        var onMq = function () { g.reduced = !!mq.matches; invalidate(); };
+        if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onMq);
+        else if (typeof mq.addListener === 'function') mq.addListener(onMq);
+      }
+      bindPointer();
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(function () { resize3D(); }).observe(el3.wrap);
+      } else {
+        window.addEventListener('resize', resize3D);
+      }
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) start3D(); });
+    } catch (_) {
+      fallback3D(false);
+    }
+  }
+
+  function setView(v, persist) {
+    if (v !== '3d' || !g.available) v = 'cards';
+    view = v;
+    el3.btnCards.setAttribute('aria-pressed', String(v === 'cards'));
+    el3.btn3d.setAttribute('aria-pressed', String(v === '3d'));
+    if (persist) { try { localStorage.setItem(VIEW_KEY, v); } catch (_) { /* ignore */ } }
+    applyViewVisibility();
+    if (v === '3d') { resize3D(); start3D(); } else { hideTip(); }
+  }
+
+  function applyViewVisibility() {
+    var show3d = view === '3d' && g.available && topic !== null;
+    if (el3.wrap.hidden === show3d) {
+      el3.wrap.hidden = !show3d;
+      if (show3d) { resize3D(); start3D(); }
+    }
+    el.grid.hidden = show3d;
+  }
+
+  function invalidate() { g.dirty = true; start3D(); }
+
+  function pointOnSphere(i, n, r) {
+    if (n <= 1) return [0, 0, 0];
+    var y = 1 - (2 * (i + 0.5)) / n;
+    var rad = Math.sqrt(Math.max(0, 1 - y * y));
+    var th = i * 2.399963229728653; // golden angle
+    return [Math.cos(th) * rad * r, y * r, Math.sin(th) * rad * r];
+  }
+
+  function update3D(sections) {
+    if (!g.available) return;
+    try {
+      var nodes = [];
+      var labels = [];
+      var count = sections.length;
+      var radii = [];
+      var rmax = 0;
+      var s, j;
+      for (s = 0; s < count; s++) {
+        var n = sections[s].bots.length;
+        var cr = n <= 1 ? 0 : 34 + 14 * Math.sqrt(n);
+        radii.push(cr);
+        if (cr + 40 > rmax) rmax = cr + 40;
+      }
+      var ringR = count <= 1 ? 0 : Math.max(120, (rmax * 2.2 * count) / (2 * Math.PI));
+      var hasPulse = false;
+      for (s = 0; s < count; s++) {
+        var sec = sections[s];
+        var ang = (s / count) * Math.PI * 2 - Math.PI / 2;
+        var cx = Math.cos(ang) * ringR;
+        var cz = Math.sin(ang) * ringR;
+        for (j = 0; j < sec.bots.length; j++) {
+          var name = sec.bots[j];
+          var st = bots.get(name);
+          var u = usage.get(name);
+          var p = pointOnSphere(j, sec.bots.length, radii[s]);
+          var status = st ? st.status : 'none';
+          if (status === 'waiting_user') hasPulse = true;
+          nodes.push({
+            name: name,
+            status: status,
+            step: st ? st.step : '',
+            hasReport: !!st,
+            x: cx + p[0], y: p[1], z: cz + p[2],
+            r: 9 + (u ? u.pct * 0.22 : 0)
+          });
+        }
+        labels.push({ text: trunc(sec.name, LABEL_SHOW_CAP), x: cx, y: radii[s] + 30, z: cz });
+      }
+      g.nodes = nodes;
+      g.labels = labels;
+      g.sceneR = ringR + rmax;
+      g.hasPulse = hasPulse;
+      el3.canvas.setAttribute('aria-label', '3D view of ' + nodes.length + ' bots; use Cards view for full details');
+      if (g.tipNode) {
+        var again = null;
+        for (j = 0; j < nodes.length; j++) if (nodes[j].name === g.tipNode.name) { again = nodes[j]; break; }
+        if (again) { g.tipNode = again; fillTip(again); } else { hideTip(); }
+      }
+      invalidate();
+    } catch (_) {
+      fallback3D(false);
+    }
+  }
+
+  function resize3D() {
+    if (!g.available || el3.wrap.hidden) return;
+    var w = el3.wrap.clientWidth;
+    var h = el3.wrap.clientHeight;
+    if (!w || !h) return;
+    var dpr = Math.min(3, window.devicePixelRatio || 1);
+    if (w !== g.w || h !== g.h || dpr !== g.dpr) {
+      g.w = w; g.h = h; g.dpr = dpr;
+      el3.canvas.width = Math.round(w * dpr);
+      el3.canvas.height = Math.round(h * dpr);
+    }
+    invalidate();
+  }
+
+  function shouldRun() {
+    return g.available && view === '3d' && !el3.wrap.hidden && !document.hidden;
+  }
+
+  function start3D() {
+    if (g.running || !shouldRun()) return;
+    g.running = true;
+    g.lastT = 0;
+    requestAnimationFrame(frame3D);
+  }
+
+  function frame3D(t) {
+    if (!shouldRun()) { g.running = false; return; }
+    var dt = g.lastT ? Math.min(0.1, (t - g.lastT) / 1000) : 0;
+    g.lastT = t;
+    var autoRotate = !g.reduced && g.pointers.size === 0 && g.tipNode === null;
+    if (autoRotate) { g.yaw += dt * 0.25; g.dirty = true; }
+    var animating = autoRotate || (!g.reduced && g.hasPulse);
+    if (animating || g.dirty) {
+      try { draw3D(t / 1000); } catch (_) { fallback3D(false); return; }
+      g.dirty = false;
+    }
+    if (!animating) { g.running = false; return; } // idle until invalidate()
+    requestAnimationFrame(frame3D);
+  }
+
+  function draw3D(time) {
+    var ctx = g.ctx;
+    var w = g.w, h = g.h;
+    if (!w || !h) return;
+    ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    var cy = Math.cos(g.yaw), sy = Math.sin(g.yaw);
+    var cp = Math.cos(g.pitch), sp = Math.sin(g.pitch);
+    var S = Math.max(1, g.sceneR);
+    var f = S * 3.5;
+    var fit = ((0.42 * Math.min(w, h)) / (S + 30)) * g.zoom;
+    var cxs = w / 2, cys = h / 2 + 10;
+
+    function proj(x, y, z) {
+      var x1 = x * cy - z * sy;
+      var z1 = x * sy + z * cy;
+      var y1 = y * cp - z1 * sp;
+      var z2 = y * sp + z1 * cp;
+      var k = f / (f + z2);
+      return { sx: cxs + x1 * k * fit, sy: cys - y1 * k * fit, k: k, depth: z2 };
+    }
+    function depthAlpha(depth) { return 1 - 0.45 * ((clamp(depth / S, -1, 1) + 1) / 2); }
+
+    var pn = [];
+    var i;
+    for (i = 0; i < g.nodes.length; i++) {
+      var nd = g.nodes[i];
+      var p = proj(nd.x, nd.y, nd.z);
+      pn.push({ n: nd, sx: p.sx, sy: p.sy, depth: p.depth, rr: Math.max(4, nd.r * p.k * fit) });
+    }
+    pn.sort(function (a, b) { return b.depth - a.depth; }); // far first
+    g.proj = pn;
+
+    var pulse = g.reduced ? 0.5 : (Math.sin(time * 4) + 1) / 2;
+    for (i = 0; i < pn.length; i++) {
+      var q = pn[i];
+      var c = g.rgb.get(q.n.status) || g.rgb.get('none');
+      var alpha = depthAlpha(q.depth);
+      var rr = q.rr;
+      ctx.globalAlpha = alpha;
+
+      if (q.n.status === 'waiting_user') {
+        var haloR = rr * (g.reduced ? 1.9 : 1.6 + 0.5 * pulse);
+        var halo = ctx.createRadialGradient(q.sx, q.sy, rr * 0.8, q.sx, q.sy, haloR);
+        halo.addColorStop(0, rgba(c, g.reduced ? 0.55 : 0.35 + 0.35 * pulse));
+        halo.addColorStop(1, rgba(c, 0));
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(q.sx, q.sy, haloR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      var grad = ctx.createRadialGradient(q.sx - rr * 0.35, q.sy - rr * 0.35, rr * 0.1, q.sx, q.sy, rr * 1.05);
+      grad.addColorStop(0, rgba(mix(c, 0.55, 255), 1));
+      grad.addColorStop(0.5, rgba(c, 1));
+      grad.addColorStop(1, rgba(mix(c, 0.6, 0), 1));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(q.sx, q.sy, rr, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (q.n.status === 'error') {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = rgba(mix(c, 0.5, 255), 0.9);
+        ctx.beginPath();
+        ctx.arc(q.sx, q.sy, rr + 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (g.tipNode === q.n) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.beginPath();
+        ctx.arc(q.sx, q.sy, rr + 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    ctx.globalAlpha = 1;
+    ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    for (i = 0; i < g.labels.length; i++) {
+      var lb = g.labels[i];
+      var lp = proj(lb.x, lb.y, lb.z);
+      var la = depthAlpha(lp.depth);
+      ctx.fillStyle = 'rgba(15,17,23,' + (0.6 * la) + ')';
+      var tw = ctx.measureText(lb.text).width;
+      ctx.fillRect(lp.sx - tw / 2 - 6, lp.sy - 18, tw + 12, 20);
+      ctx.fillStyle = 'rgba(230,232,239,' + la + ')';
+      ctx.fillText(lb.text, lp.sx, lp.sy - 2);
+    }
+
+    if (g.tipNode) positionTip();
+  }
+
+  // ----- tooltip -----
+
+  function fillTip(nd) {
+    tipName.textContent = nd.name;
+    var label = nd.hasReport ? LABELS.get(nd.status) : 'No report yet';
+    tipStatus.textContent = label;
+    tipStatus.className = 'tip-status pill pill-' + nd.status;
+    var stepText = nd.step ? trunc(nd.step, STEP_SHOW_CAP) : (nd.hasReport ? '—' : 'no report yet');
+    tipStep.textContent = stepText;
+    announce(nd.name + ': ' + label + '. ' + stepText);
+  }
+
+  // Screen-reader announcement of the selected node (the tooltip itself is not announced).
+  function announce(text) {
+    if (el3.announce.textContent !== text) el3.announce.textContent = text;
+  }
+
+  function positionTip() {
+    var q = null;
+    for (var i = 0; i < g.proj.length; i++) if (g.proj[i].n === g.tipNode) { q = g.proj[i]; break; }
+    if (!q) return;
+    var tw = el3.tip.offsetWidth, th = el3.tip.offsetHeight;
+    var left = q.sx + q.rr + 10;
+    if (left + tw > g.w - 6) left = q.sx - q.rr - 10 - tw;
+    var top = clamp(q.sy - th / 2, 6, Math.max(6, g.h - th - 6));
+    el3.tip.style.left = Math.round(clamp(left, 6, Math.max(6, g.w - tw - 6))) + 'px';
+    el3.tip.style.top = Math.round(top) + 'px';
+  }
+
+  function showTip(hit) {
+    if (!hit) { hideTip(); return; }
+    if (g.tipNode === hit.n) return;
+    g.tipNode = hit.n;
+    fillTip(hit.n);
+    el3.tip.hidden = false;
+    invalidate();
+  }
+
+  function hideTip() {
+    if (g.tipNode === null) return;
+    g.tipNode = null;
+    el3.tip.hidden = true;
+    announce('');
+    invalidate();
+  }
+
+  function hitTest(x, y) {
+    var pn = g.proj;
+    for (var i = pn.length - 1; i >= 0; i--) {
+      var dx = x - pn[i].sx, dy = y - pn[i].sy;
+      var r = Math.max(pn[i].rr, 8);
+      if (dx * dx + dy * dy <= r * r) return pn[i];
+    }
+    return null;
+  }
+
+  // ----- interaction (Pointer Events) -----
+
+  function setZoom(z) { g.zoom = clamp(z, ZOOM_MIN, ZOOM_MAX); invalidate(); }
+
+  function bindPointer() {
+    var c = el3.canvas;
+    function pos(e) {
+      var r = c.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+    function pointerDist() {
+      var pts = [];
+      g.pointers.forEach(function (p) { pts.push(p); });
+      if (pts.length < 2) return 0;
+      var dx = pts[0].x - pts[1].x, dy = pts[0].y - pts[1].y;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    c.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      try { c.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      var p = pos(e);
+      g.pointers.set(e.pointerId, p);
+      if (g.pointers.size === 1) {
+        g.drag = { x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false, type: e.pointerType };
+        g.pinch = null;
+      } else if (g.pointers.size === 2) {
+        g.pinch = { d: pointerDist(), z: g.zoom };
+        g.drag = null;
+      }
+      c.classList.add('dragging');
+      e.preventDefault();
+    });
+
+    c.addEventListener('pointermove', function (e) {
+      var p = pos(e);
+      if (g.pointers.has(e.pointerId)) {
+        g.pointers.set(e.pointerId, p);
+        if (g.pinch && g.pointers.size >= 2) {
+          var d = pointerDist();
+          if (g.pinch.d > 0) setZoom(g.pinch.z * (d / g.pinch.d));
+        } else if (g.drag) {
+          var dx = p.x - g.drag.x, dy = p.y - g.drag.y;
+          var tx = p.x - g.drag.sx, ty = p.y - g.drag.sy;
+          if (tx * tx + ty * ty > 16) g.drag.moved = true;
+          g.yaw += dx * 0.008;
+          g.pitch = clamp(g.pitch + dy * 0.008, -PITCH_MAX, PITCH_MAX);
+          g.drag.x = p.x; g.drag.y = p.y;
+          if (g.drag.moved) hideTip();
+          invalidate();
+        }
+      } else if (e.pointerType === 'mouse') {
+        showTip(hitTest(p.x, p.y));
+      }
+    });
+
+    function end(e) {
+      if (!g.pointers.has(e.pointerId)) return;
+      var p = pos(e);
+      g.pointers.delete(e.pointerId);
+      try { c.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+      if (g.drag && !g.drag.moved && e.type === 'pointerup' && g.drag.type !== 'mouse') {
+        showTip(hitTest(p.x, p.y)); // tap
+      }
+      if (g.pointers.size === 0) {
+        g.drag = null; g.pinch = null;
+        c.classList.remove('dragging');
+      } else if (g.pointers.size === 1) {
+        g.pinch = null;
+        var rest = null;
+        g.pointers.forEach(function (v) { rest = v; });
+        g.drag = { x: rest.x, y: rest.y, sx: rest.x, sy: rest.y, moved: true, type: 'touch' };
+      }
+      invalidate();
+    }
+    c.addEventListener('pointerup', end);
+    c.addEventListener('pointercancel', end);
+    c.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'mouse' && !g.drag) hideTip();
+    });
+
+    c.addEventListener('wheel', function (e) {
+      e.preventDefault();
+      setZoom(g.zoom * Math.exp(-e.deltaY * 0.0015));
+    }, { passive: false });
+
+    c.addEventListener('keydown', function (e) {
+      var step = 0.12;
+      if (e.key === 'ArrowLeft') g.yaw -= step;
+      else if (e.key === 'ArrowRight') g.yaw += step;
+      else if (e.key === 'ArrowUp') g.pitch = clamp(g.pitch - step, -PITCH_MAX, PITCH_MAX);
+      else if (e.key === 'ArrowDown') g.pitch = clamp(g.pitch + step, -PITCH_MAX, PITCH_MAX);
+      else if (e.key === '+' || e.key === '=') { setZoom(g.zoom * 1.15); return; }
+      else if (e.key === '-' || e.key === '_') { setZoom(g.zoom / 1.15); return; }
+      else if (e.key === 'Escape') { hideTip(); return; }
+      else return;
+      e.preventDefault();
+      invalidate();
+    });
+  }
+
+  el3.btnCards.addEventListener('click', function () { setView('cards', true); });
+  el3.btn3d.addEventListener('click', function () { setView('3d', true); });
+
+  init3D();
+  var savedView = null;
+  try { savedView = localStorage.getItem(VIEW_KEY); } catch (_) { savedView = null; }
+  setView(savedView === '3d' ? '3d' : 'cards', false);
+
+  applyHash();
 })();
 </script>
 </body>
